@@ -1,0 +1,2240 @@
+<!doctype html>
+<html lang="pl" class="h-full">
+ <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Coin Runner</title>
+  <script src="/_sdk/data_sdk.js"></script>
+  <script src="/_sdk/element_sdk.js"></script>
+  <style>
+    body {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Arial', sans-serif;
+      overflow: hidden;
+      height: 100%;
+    }
+    
+    .game-wrapper {
+      width: 100%;
+      height: 100%;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    #menu {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      gap: 30px;
+      padding: 20px;
+    }
+    
+    #gameTitle {
+      font-size: 64px;
+      font-weight: bold;
+      text-shadow: 4px 4px 8px rgba(0,0,0,0.3);
+      margin: 0;
+    }
+    
+    .menu-stats {
+      display: flex;
+      gap: 40px;
+      font-size: 24px;
+    }
+    
+    .stat-box {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px 30px;
+      border-radius: 0;
+      background: white;
+      color: black;
+      border: 4px solid black;
+      box-shadow: 6px 6px 0 rgba(0,0,0,1);
+    }
+    
+    .stat-label {
+      font-size: 16px;
+      opacity: 0.8;
+      margin-bottom: 5px;
+    }
+    
+    .stat-value {
+      font-size: 32px;
+      font-weight: bold;
+    }
+    
+    #startButton, #missionsButton, #avenueButton {
+      padding: 20px 50px;
+      font-size: 28px;
+      font-weight: bold;
+      background: white;
+      color: black;
+      border: 4px solid black;
+      border-radius: 0;
+      cursor: pointer;
+      transition: all 0.1s;
+      box-shadow: 6px 6px 0 rgba(0,0,0,1);
+      image-rendering: pixelated;
+    }
+    
+    #startButton:hover, #missionsButton:hover, #avenueButton:hover {
+      transform: translate(2px, 2px);
+      box-shadow: 4px 4px 0 rgba(0,0,0,1);
+    }
+    
+    #missionsButton, #avenueButton, #shopButton {
+      padding: 15px 40px;
+      font-size: 24px;
+      margin-top: -10px;
+      background: white;
+      color: black;
+      border: 4px solid black;
+      border-radius: 0;
+      cursor: pointer;
+      transition: all 0.1s;
+      box-shadow: 6px 6px 0 rgba(0,0,0,1);
+      image-rendering: pixelated;
+    }
+    
+    #missionsButton:hover, #avenueButton:hover, #shopButton:hover {
+      transform: translate(2px, 2px);
+      box-shadow: 4px 4px 0 rgba(0,0,0,1);
+    }
+    
+    #gameCanvas {
+      display: none;
+      width: 100%;
+      height: 100%;
+    }
+    
+    #gameUI {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      display: none;
+      font-size: 24px;
+      font-weight: bold;
+      z-index: 10;
+    }
+    
+    .ui-item {
+      padding: 10px 20px;
+      border-radius: 0;
+      background: white;
+      color: black;
+      border: 3px solid black;
+      box-shadow: 4px 4px 0 rgba(0,0,0,1);
+    }
+    
+    #gameOver {
+      display: none;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      padding: 40px;
+      border-radius: 0;
+      background: white;
+      color: black;
+      border: 6px solid black;
+      box-shadow: 10px 10px 0 rgba(0,0,0,1);
+      z-index: 20;
+    }
+    
+    #gameOver h2 {
+      font-size: 48px;
+      margin: 0 0 20px 0;
+    }
+    
+    #gameOver p {
+      font-size: 24px;
+      margin: 10px 0;
+    }
+    
+    #restartButton, #menuButton {
+      margin-top: 0;
+      padding: 15px 40px;
+      font-size: 24px;
+      font-weight: bold;
+      background: white;
+      color: black;
+      border: 4px solid black;
+      border-radius: 0;
+      cursor: pointer;
+      transition: all 0.1s;
+      box-shadow: 6px 6px 0 rgba(0,0,0,1);
+    }
+    
+    #restartButton:hover, #menuButton:hover {
+      transform: translate(2px, 2px);
+      box-shadow: 4px 4px 0 rgba(0,0,0,1);
+    }
+  </style>
+  <style>@view-transition { navigation: auto; }</style>
+  <script src="https://cdn.tailwindcss.com" type="text/javascript"></script>
+ </head>
+ <body class="h-full">
+  <div class="game-wrapper">
+   <div id="menu">
+    <h1 id="gameTitle">COIN RUNNER</h1>
+    <div class="menu-stats">
+     <div class="stat-box">
+      <canvas id="menuDistanceIcon" width="32" height="32" style="margin-bottom: 10px;"></canvas>
+      <div class="stat-label">
+       Najwięcej przebiegnietych metrów
+      </div>
+      <div class="stat-value" id="bestScore">
+       0
+      </div>
+     </div>
+     <div class="stat-box">
+      <canvas id="menuCoinIcon" width="32" height="32" style="margin-bottom: 10px;"></canvas>
+      <div class="stat-label">
+       Zebrane monety
+      </div>
+      <div class="stat-value" id="totalCoins">
+       0
+      </div>
+     </div>
+    </div><button id="startButton">START GRY</button> <button id="missionsButton">MISJE</button> <button id="avenueButton">ALEJA</button> <button id="shopButton">SKLEP</button>
+   </div>
+   <div id="missionsScreen" style="display: none; width: 100%; height: 100%; overflow-y: auto; padding: 40px 20px; box-sizing: border-box;">
+    <div style="max-width: 900px; margin: 0 auto;">
+     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+      <h1 style="font-size: 48px; font-weight: bold; color: white; margin: 0;">MISJE</h1>
+      <div style="display: flex; align-items: center; gap: 10px; padding: 15px 25px; background: white; border: 4px solid black; box-shadow: 6px 6px 0 rgba(0,0,0,1);">
+       <canvas id="ticketIconHeader" width="32" height="32"></canvas><span id="totalTickets" style="font-size: 28px; font-weight: bold; color: black;">0</span>
+      </div>
+     </div><button id="backToMenuButton" style="padding: 12px 30px; font-size: 20px; font-weight: bold; background: white; color: black; border: 4px solid black; border-radius: 0; cursor: pointer; transition: all 0.1s; box-shadow: 6px 6px 0 rgba(0,0,0,1); margin-bottom: 30px;">← POWRÓT</button>
+     <div id="missionsList"></div>
+    </div>
+   </div>
+   <div id="shopScreen" style="display: none; width: 100%; height: 100%; overflow-y: auto; padding: 40px 20px; box-sizing: border-box;">
+    <div style="max-width: 1200px; margin: 0 auto;">
+     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+      <h1 style="font-size: 48px; font-weight: bold; color: white; margin: 0;">SKLEP</h1>
+      <div style="display: flex; gap: 15px;">
+       <div style="display: flex; align-items: center; gap: 10px; padding: 15px 25px; background: white; border: 4px solid black; box-shadow: 6px 6px 0 rgba(0,0,0,1);">
+        <canvas id="creditIconShopHeader" width="32" height="32"></canvas><span id="totalCreditsShop" style="font-size: 28px; font-weight: bold; color: black;">0</span>
+       </div>
+      </div>
+     </div><button id="backToMenuFromShop" style="padding: 12px 30px; font-size: 20px; font-weight: bold; background: white; color: black; border: 4px solid black; border-radius: 0; cursor: pointer; transition: all 0.1s; box-shadow: 6px 6px 0 rgba(0,0,0,1); margin-bottom: 30px;">← POWRÓT</button>
+     <div id="shopCharactersList"></div>
+    </div>
+   </div>
+   <div id="avenueScreen" style="display: none; width: 100%; height: 100%; overflow-y: auto; overflow-x: auto; padding: 40px 20px; box-sizing: border-box;">
+    <div id="avenueWelcome" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.9); z-index: 1000; justify-content: center; align-items: center;">
+     <div style="text-align: center; padding: 60px; background: white; border: 6px solid black; box-shadow: 12px 12px 0 rgba(0,0,0,1); max-width: 600px; position: relative;">
+      <div style="position: absolute; top: -30px; left: 50%; transform: translateX(-50%); width: 200px; height: 200px; background: radial-gradient(circle, rgba(255,215,0,0.8) 0%, rgba(255,215,0,0.4) 40%, transparent 70%); border-radius: 50%; filter: blur(20px); z-index: -1;"></div>
+      <h1 style="font-size: 56px; font-weight: bold; color: #FFD700; margin: 0 0 20px 0; text-shadow: 3px 3px 6px rgba(0,0,0,0.3);">Witaj w Dustvale</h1>
+      <div style="width: 100px; height: 4px; background: linear-gradient(90deg, transparent, #FFD700, transparent); margin: 20px auto;"></div>
+      <p style="font-size: 20px; color: #333; margin: 20px 0; line-height: 1.6;">Miasto pełne możliwości i nagród.<br>
+        Zdobywaj tickety w misjach i odblokowuj kolejne poziomy!</p><button id="startAvenueButton" style="margin-top: 30px; padding: 18px 50px; font-size: 24px; font-weight: bold; background: #FFD700; color: black; border: 4px solid black; border-radius: 0; cursor: pointer; transition: all 0.1s; box-shadow: 6px 6px 0 rgba(0,0,0,1);"> ROZPOCZNIJ ALEJĘ </button>
+     </div>
+    </div>
+    <div style="max-width: 1800px; margin: 0 auto;">
+     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+      <h1 style="font-size: 48px; font-weight: bold; color: white; margin: 0;">ALEJA</h1>
+      <div style="display: flex; gap: 15px;">
+       <div style="display: flex; align-items: center; gap: 10px; padding: 15px 25px; background: white; border: 4px solid black; box-shadow: 6px 6px 0 rgba(0,0,0,1);">
+        <canvas id="ticketIconAvenueHeader" width="32" height="32"></canvas><span id="totalTicketsAvenue" style="font-size: 28px; font-weight: bold; color: black;">0</span>
+       </div>
+       <div style="display: flex; align-items: center; gap: 10px; padding: 15px 25px; background: white; border: 4px solid black; box-shadow: 6px 6px 0 rgba(0,0,0,1);">
+        <canvas id="creditIconAvenueHeader" width="32" height="32"></canvas><span id="totalCreditsAvenue" style="font-size: 28px; font-weight: bold; color: black;">0</span>
+       </div>
+      </div>
+     </div><button id="backToMenuFromAvenue" style="padding: 12px 30px; font-size: 20px; font-weight: bold; background: white; color: black; border: 4px solid black; border-radius: 0; cursor: pointer; transition: all 0.1s; box-shadow: 6px 6px 0 rgba(0,0,0,1); margin-bottom: 30px;">← POWRÓT</button>
+     <div style="display: flex; gap: 30px;">
+      <div style="width: 250px; flex-shrink: 0;">
+       <div style="background: white; border: 4px solid black; box-shadow: 6px 6px 0 rgba(0,0,0,1); padding: 20px;">
+        <h3 style="margin: 0 0 15px 0; font-size: 20px; color: black; text-align: center;">MIASTA</h3><button id="city1Tab" onclick="switchCity(1)" style="width: 100%; padding: 12px; font-size: 18px; font-weight: bold; background: #4CAF50; color: white; border: 3px solid black; border-radius: 0; cursor: pointer; margin-bottom: 10px;">Miasto Pierwsze</button>
+       </div>
+      </div>
+      <div style="flex: 1; overflow-x: auto;">
+       <div id="avenueContent"></div>
+      </div>
+     </div>
+    </div>
+   </div>
+   <canvas id="gameCanvas"></canvas>
+   <div id="gameUI">
+    <div class="ui-item" id="statsDisplay" style="display: flex; align-items: center; gap: 20px;">
+     <div style="display: flex; align-items: center; gap: 8px;">
+      <canvas id="coinIcon" width="24" height="24"></canvas><span id="coinCount">0</span>
+     </div>
+     <div style="display: flex; align-items: center; gap: 8px;">
+      <canvas id="distanceIcon" width="24" height="24"></canvas><span id="distanceCount">0m</span>
+     </div>
+    </div>
+   </div>
+   <div id="gameOver">
+    <h2>KONIEC GRY!</h2>
+    <p>Monety: <span id="finalCoins">0</span></p>
+    <p>Dystans: <span id="finalDistance">0</span>m</p>
+    <div id="newRecordBadge" class="new-record" style="display: none;">
+     🎉 NOWY REKORD! 🎉
+    </div>
+    <div style="display: flex; gap: 20px; margin-top: 20px;"><button id="restartButton">ZAGRAJ PONOWNIE</button> <button id="menuButton">POWRÓT DO MENU</button>
+    </div>
+   </div>
+  </div>
+  <script>
+    const defaultConfig = {
+      background_color: "#1a1a2e",
+      ground_color: "#2d2d44",
+      player_color: "#FFD700",
+      obstacle_color: "#c0392b",
+      coin_color: "#FFD700",
+      text_color: "#FFFFFF",
+      button_color: "#4CAF50",
+      game_title: "URBAN BIEGACZE",
+      start_button_text: "START GRY",
+      font_family: "Arial",
+      font_size: 16
+    };
+
+    let allRecords = [];
+    let isInitialized = false;
+    let bestScore = 0;
+    let totalCoinsCollected = 0;
+    let playerData = {
+      tickets: 0,
+      credits: 0,
+      avenue_level: 1,
+      avenue_claimed: false,
+      avenue_first_visit: true,
+      mission1_stage: 1,
+      mission2_stage: 1,
+      mission3_stage: 1,
+      mission4_stage: 1,
+      mission5_stage: 1,
+      mission1_claimed: false,
+      mission2_claimed: false,
+      mission3_claimed: false,
+      mission4_claimed: false,
+      mission5_claimed: false,
+      owned_characters: "hailie",
+      active_character: "hailie",
+      active_variant: 1
+    };
+    let currentGameCarsJumped = 0;
+    let currentGameTaxisJumped = 0;
+    
+    const characterImages = {};
+    const characterData = {
+      hailie: {
+        name: "Hailie",
+        variants: [
+          { id: 1, name: "Hailie", image: "postac_1.png", cost: 0, owned: true },
+          { id: 2, name: "Przypływ Miłości Hailie", image: "postac_1s2.png", cost: 59, owned: false }
+        ]
+      }
+    };
+    
+    function loadCharacterImages() {
+      Object.keys(characterData).forEach(charKey => {
+        characterData[charKey].variants.forEach(variant => {
+          const img = new Image();
+          img.src = variant.image;
+          img.onerror = () => {
+            console.log(`Nie można załadować obrazka: ${variant.image}`);
+          };
+          characterImages[variant.image] = img;
+        });
+      });
+    }
+
+    const dataHandler = {
+      onDataChanged(data) {
+        allRecords = data;
+        if (data.length > 0) {
+          bestScore = Math.max(...data.map(r => r.distance || 0));
+          totalCoinsCollected = data.reduce((sum, r) => sum + r.coins, 0);
+          
+          const lastRecord = data[data.length - 1];
+          if (lastRecord.tickets !== undefined) {
+            playerData.tickets = lastRecord.tickets || 0;
+            playerData.credits = lastRecord.credits || 0;
+            playerData.avenue_level = lastRecord.avenue_level || 1;
+            playerData.avenue_claimed = lastRecord.avenue_claimed || false;
+            playerData.avenue_first_visit = lastRecord.avenue_first_visit !== undefined ? lastRecord.avenue_first_visit : true;
+            playerData.mission1_stage = lastRecord.mission1_stage || 1;
+            playerData.mission2_stage = lastRecord.mission2_stage || 1;
+            playerData.mission3_stage = lastRecord.mission3_stage || 1;
+            playerData.mission4_stage = lastRecord.mission4_stage || 1;
+            playerData.mission5_stage = lastRecord.mission5_stage || 1;
+            playerData.mission1_claimed = lastRecord.mission1_claimed || false;
+            playerData.mission2_claimed = lastRecord.mission2_claimed || false;
+            playerData.mission3_claimed = lastRecord.mission3_claimed || false;
+            playerData.mission4_claimed = lastRecord.mission4_claimed || false;
+            playerData.mission5_claimed = lastRecord.mission5_claimed || false;
+            playerData.owned_characters = lastRecord.owned_characters || "hailie";
+            playerData.active_character = lastRecord.active_character || "hailie";
+            playerData.active_variant = lastRecord.active_variant || 1;
+            
+            const ownedChars = playerData.owned_characters.split(',');
+            Object.keys(characterData).forEach(charKey => {
+              characterData[charKey].variants.forEach(variant => {
+                if (variant.cost === 0 || ownedChars.includes(`${charKey}_${variant.id}`)) {
+                  variant.owned = true;
+                }
+              });
+            });
+          }
+          
+          if (document.getElementById('bestScore')) {
+            document.getElementById('bestScore').textContent = bestScore;
+          }
+          if (document.getElementById('totalCoins')) {
+            document.getElementById('totalCoins').textContent = totalCoinsCollected;
+          }
+          if (document.getElementById('totalTickets')) {
+            document.getElementById('totalTickets').textContent = playerData.tickets;
+          }
+          if (document.getElementById('totalTicketsAvenue')) {
+            document.getElementById('totalTicketsAvenue').textContent = playerData.tickets;
+          }
+          if (document.getElementById('totalCreditsAvenue')) {
+            document.getElementById('totalCreditsAvenue').textContent = playerData.credits;
+          }
+          if (document.getElementById('totalCreditsShop')) {
+            document.getElementById('totalCreditsShop').textContent = playerData.credits;
+          }
+          
+          updateMissionsDisplay();
+          updateAvenueDisplay();
+          updateShopDisplay();
+        }
+      }
+    };
+
+    async function initializeDataSdk() {
+      if (window.dataSdk && !isInitialized) {
+        const result = await window.dataSdk.init(dataHandler);
+        if (result.isOk) {
+          isInitialized = true;
+        }
+      }
+    }
+
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    
+    let gameRunning = false;
+    let score = 0;
+    let coins = 0;
+    let distance = 0;
+    let gameSpeed = 6;
+    let frameCount = 0;
+    
+    const player = {
+      x: 100,
+      y: 0,
+      width: 40,
+      height: 70,
+      velocityY: 0,
+      jumping: false,
+      grounded: false
+    };
+    
+    const gravity = 0.8;
+    const jumpForce = -15;
+    let groundY;
+    
+    const obstacles = [];
+    const coinObjects = [];
+    
+    const robot = {
+      x: -100,
+      y: 0,
+      width: 35,
+      height: 45,
+      velocityY: 0,
+      jumping: false,
+      grounded: false,
+      distanceBehind: 150
+    };
+    
+    function resizeCanvas() {
+      canvas.width = canvas.offsetWidth;
+      canvas.height = canvas.offsetHeight;
+      groundY = canvas.height - 80;
+      player.y = groundY - player.height;
+    }
+    
+    function startGame() {
+      document.getElementById('menu').style.display = 'none';
+      document.getElementById('gameCanvas').style.display = 'block';
+      document.getElementById('gameUI').style.display = 'block';
+      document.getElementById('gameOver').style.display = 'none';
+      
+      resizeCanvas();
+      
+      gameRunning = true;
+      score = 0;
+      coins = 0;
+      distance = 0;
+      gameSpeed = 6;
+      frameCount = 0;
+      obstacles.length = 0;
+      coinObjects.length = 0;
+      currentGameCarsJumped = 0;
+      currentGameTaxisJumped = 0;
+      
+      player.y = groundY - player.height;
+      player.velocityY = 0;
+      player.jumping = false;
+      player.grounded = true;
+      
+      robot.x = player.x - robot.distanceBehind;
+      robot.y = groundY - robot.height;
+      robot.velocityY = 0;
+      robot.jumping = false;
+      robot.grounded = true;
+      
+      updateUI();
+      gameLoop();
+    }
+    
+    function updateUI() {
+      document.getElementById('coinCount').textContent = coins;
+      document.getElementById('distanceCount').textContent = distance + 'm';
+    }
+    
+    function drawCoinIcon() {
+      const canvas = document.getElementById('coinIcon');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, 24, 24);
+      
+      ctx.fillStyle = "#FFD700";
+      ctx.beginPath();
+      ctx.arc(12, 12, 10, 0, Math.PI * 2);
+      ctx.fill();
+      
+      ctx.strokeStyle = "#B8860B";
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      
+      ctx.strokeStyle = "#FFA500";
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.arc(12, 12, 7, 0, Math.PI * 2);
+      ctx.stroke();
+      
+      ctx.fillStyle = "#8B6914";
+      ctx.fillRect(11, 7, 2, 10);
+      ctx.fillRect(9, 8, 6, 2);
+      ctx.fillRect(9, 11, 6, 2);
+      ctx.fillRect(9, 14, 6, 2);
+    }
+    
+    function drawDistanceIcon() {
+      const canvas = document.getElementById('distanceIcon');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, 24, 24);
+      
+      ctx.fillStyle = "#4A90E2";
+      ctx.fillRect(3, 8, 18, 8);
+      
+      ctx.strokeStyle = "#2E5C8A";
+      ctx.lineWidth = 2;
+      ctx.strokeRect(3, 8, 18, 8);
+      
+      ctx.fillStyle = "#FFFFFF";
+      for (let i = 0; i < 6; i++) {
+        const x = 5 + i * 3;
+        const h = i % 2 === 0 ? 4 : 2;
+        ctx.fillRect(x, 10, 1, h);
+      }
+    }
+    
+    function drawMenuCoinIcon() {
+      const canvas = document.getElementById('menuCoinIcon');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, 32, 32);
+      
+      ctx.fillStyle = "#FFD700";
+      ctx.beginPath();
+      ctx.arc(16, 16, 13, 0, Math.PI * 2);
+      ctx.fill();
+      
+      ctx.strokeStyle = "#B8860B";
+      ctx.lineWidth = 2.5;
+      ctx.stroke();
+      
+      ctx.strokeStyle = "#FFA500";
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.arc(16, 16, 9, 0, Math.PI * 2);
+      ctx.stroke();
+      
+      ctx.fillStyle = "#8B6914";
+      ctx.fillRect(15, 9, 2, 14);
+      ctx.fillRect(12, 11, 8, 2);
+      ctx.fillRect(12, 15, 8, 2);
+      ctx.fillRect(12, 19, 8, 2);
+    }
+    
+    function drawMenuDistanceIcon() {
+      const canvas = document.getElementById('menuDistanceIcon');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, 32, 32);
+      
+      ctx.fillStyle = "#4A90E2";
+      ctx.fillRect(4, 11, 24, 10);
+      
+      ctx.strokeStyle = "#2E5C8A";
+      ctx.lineWidth = 2.5;
+      ctx.strokeRect(4, 11, 24, 10);
+      
+      ctx.fillStyle = "#FFFFFF";
+      for (let i = 0; i < 8; i++) {
+        const x = 7 + i * 3;
+        const h = i % 2 === 0 ? 6 : 3;
+        ctx.fillRect(x, 13, 1.5, h);
+      }
+    }
+    
+    function drawTicketIcon(canvasId, size = 32) {
+      const canvas = document.getElementById(canvasId);
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, size, size);
+      
+      const scale = size / 32;
+      
+      ctx.fillStyle = "#DC143C";
+      ctx.fillRect(4 * scale, 8 * scale, 24 * scale, 16 * scale);
+      
+      ctx.strokeStyle = "#8B0000";
+      ctx.lineWidth = 2 * scale;
+      ctx.strokeRect(4 * scale, 8 * scale, 24 * scale, 16 * scale);
+      
+      ctx.fillStyle = "#1a1a2e";
+      ctx.fillRect(4 * scale, 13 * scale, 2 * scale, 6 * scale);
+      ctx.fillRect(26 * scale, 13 * scale, 2 * scale, 6 * scale);
+      
+      ctx.strokeStyle = "#FFFFFF";
+      ctx.lineWidth = 1 * scale;
+      for (let i = 0; i < 5; i++) {
+        const y = 16 * scale;
+        const x = 8 * scale + i * 4 * scale;
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+        ctx.lineTo(x + 2 * scale, y);
+        ctx.stroke();
+      }
+      
+      ctx.fillStyle = "#FFFFFF";
+      ctx.fillRect(8 * scale, 11 * scale, 2 * scale, 2 * scale);
+      ctx.fillRect(12 * scale, 11 * scale, 2 * scale, 2 * scale);
+      ctx.fillRect(16 * scale, 11 * scale, 2 * scale, 2 * scale);
+      
+      ctx.fillRect(8 * scale, 19 * scale, 2 * scale, 2 * scale);
+      ctx.fillRect(12 * scale, 19 * scale, 2 * scale, 2 * scale);
+      ctx.fillRect(16 * scale, 19 * scale, 2 * scale, 2 * scale);
+    }
+    
+    function drawCreditIcon(canvasId, size = 32) {
+      const canvas = document.getElementById(canvasId);
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, size, size);
+      
+      const scale = size / 32;
+      
+      ctx.fillStyle = "#4A90E2";
+      ctx.fillRect(4 * scale, 8 * scale, 24 * scale, 16 * scale);
+      
+      ctx.strokeStyle = "#1E3A5F";
+      ctx.lineWidth = 2 * scale;
+      ctx.strokeRect(4 * scale, 8 * scale, 24 * scale, 16 * scale);
+      
+      ctx.fillStyle = "#1a1a2e";
+      ctx.fillRect(4 * scale, 13 * scale, 2 * scale, 6 * scale);
+      ctx.fillRect(26 * scale, 13 * scale, 2 * scale, 6 * scale);
+      
+      ctx.strokeStyle = "#FFFFFF";
+      ctx.lineWidth = 1 * scale;
+      for (let i = 0; i < 5; i++) {
+        const y = 16 * scale;
+        const x = 8 * scale + i * 4 * scale;
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+        ctx.lineTo(x + 2 * scale, y);
+        ctx.stroke();
+      }
+      
+      ctx.fillStyle = "#FFFFFF";
+      ctx.fillRect(9 * scale, 11 * scale, 2 * scale, 2 * scale);
+      ctx.fillRect(13 * scale, 11 * scale, 2 * scale, 2 * scale);
+      ctx.fillRect(17 * scale, 11 * scale, 2 * scale, 2 * scale);
+      ctx.fillRect(21 * scale, 11 * scale, 2 * scale, 2 * scale);
+      
+      ctx.fillRect(9 * scale, 19 * scale, 2 * scale, 2 * scale);
+      ctx.fillRect(13 * scale, 19 * scale, 2 * scale, 2 * scale);
+      ctx.fillRect(17 * scale, 19 * scale, 2 * scale, 2 * scale);
+      ctx.fillRect(21 * scale, 19 * scale, 2 * scale, 2 * scale);
+    }
+    
+    function gameLoop() {
+      if (!gameRunning) return;
+      
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      
+      const config = window.elementSdk ? window.elementSdk.config : defaultConfig;
+      
+      ctx.fillStyle = config.background_color || defaultConfig.background_color;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      const buildingOffset = (frameCount * gameSpeed * 0.3) % 200;
+      ctx.fillStyle = "#0f0f1e";
+      for (let i = -1; i < Math.ceil(canvas.width / 200) + 1; i++) {
+        const x = i * 200 - buildingOffset;
+        const heights = [250, 300, 280, 320, 260];
+        const buildingIndex = Math.floor((frameCount * gameSpeed * 0.3 + i * 200) / 200);
+        const h = heights[Math.abs(buildingIndex) % heights.length];
+        ctx.fillRect(x, groundY - h, 180, h);
+        
+        ctx.fillStyle = "#ffd700";
+        for (let row = 0; row < Math.floor(h / 30); row++) {
+          for (let col = 0; col < 4; col++) {
+            const seed = buildingIndex * 1000 + row * 10 + col;
+            if ((seed * 9301 + 49297) % 233280 / 233280 > 0.3) {
+              ctx.fillRect(x + 20 + col * 35, groundY - h + 15 + row * 30, 20, 15);
+            }
+          }
+        }
+        ctx.fillStyle = "#0f0f1e";
+      }
+      
+      ctx.fillStyle = config.ground_color || defaultConfig.ground_color;
+      ctx.fillRect(0, groundY, canvas.width, canvas.height - groundY);
+      
+      ctx.strokeStyle = "#ffd700";
+      ctx.lineWidth = 3;
+      const lineOffset = (frameCount * gameSpeed) % 80;
+      for (let i = 0; i < canvas.width / 80 + 1; i++) {
+        const x = i * 80 - lineOffset;
+        ctx.beginPath();
+        ctx.moveTo(x, groundY + 20);
+        ctx.lineTo(x + 40, groundY + 20);
+        ctx.stroke();
+      }
+      
+      ctx.fillStyle = "#ffffff";
+      for (let i = 0; i < 50; i++) {
+        const starX = (i * 137) % canvas.width;
+        const starY = (i * 83) % (groundY - 100);
+        ctx.fillRect(starX, starY, 2, 2);
+      }
+      
+      player.velocityY += gravity;
+      player.y += player.velocityY;
+      
+      if (player.y >= groundY - player.height) {
+        player.y = groundY - player.height;
+        player.velocityY = 0;
+        player.jumping = false;
+        player.grounded = true;
+      } else {
+        player.grounded = false;
+      }
+      
+      robot.x = player.x - robot.distanceBehind;
+      
+      robot.velocityY += gravity;
+      robot.y += robot.velocityY;
+      
+      if (robot.y >= groundY - robot.height) {
+        robot.y = groundY - robot.height;
+        robot.velocityY = 0;
+        robot.jumping = false;
+        robot.grounded = true;
+      } else {
+        robot.grounded = false;
+      }
+      
+      for (let obs of obstacles) {
+        if (!robot.jumping && robot.grounded) {
+          if (obs.x > robot.x - 50 && obs.x < robot.x + 100) {
+            robot.velocityY = jumpForce;
+            robot.jumping = true;
+            robot.grounded = false;
+          }
+        }
+      }
+      
+      ctx.fillStyle = "#666666";
+      ctx.fillRect(robot.x, robot.y, robot.width, robot.height);
+      
+      ctx.fillStyle = "#ff0000";
+      ctx.beginPath();
+      ctx.arc(robot.x + 10, robot.y + 12, 4, 0, Math.PI * 2);
+      ctx.arc(robot.x + 25, robot.y + 12, 4, 0, Math.PI * 2);
+      ctx.fill();
+      
+      const activeChar = characterData[playerData.active_character];
+      const activeVariant = activeChar ? activeChar.variants.find(v => v.id === playerData.active_variant) : null;
+      const playerImg = activeVariant ? characterImages[activeVariant.image] : null;
+      
+      if (playerImg && playerImg.complete && playerImg.naturalHeight !== 0) {
+        ctx.drawImage(playerImg, player.x, player.y, player.width, player.height);
+      } else {
+        ctx.fillStyle = config.player_color || defaultConfig.player_color;
+        ctx.fillRect(player.x, player.y, player.width, player.height);
+      }
+      
+      frameCount++;
+      if (frameCount % 180 === 0) {
+        const carColors = [
+          "#FF0000", "#00FF00", "#0000FF", "#FFFF00", "#FF00FF", "#00FFFF",
+          "#FFA500", "#800080", "#FFC0CB", "#A52A2A", "#808080", "#000080",
+          "#008080", "#800000", "#808000", "#00FF7F", "#DC143C", "#FF1493",
+          "#4B0082", "#F0E68C"
+        ];
+        
+        const isTaxi = Math.random() < 0.2;
+        
+        const carX = canvas.width;
+        obstacles.push({
+          x: carX,
+          y: groundY - 140,
+          width: 180,
+          height: 140,
+          isLimo: false,
+          color: isTaxi ? "#FFD700" : carColors[Math.floor(Math.random() * carColors.length)]
+        });
+        
+        const numCoins = Math.floor(Math.random() * 23) + 3;
+        const coinSpacing = 35;
+        const totalCoinsWidth = (numCoins - 1) * coinSpacing;
+        const spaceBetweenCars = 180 * 6;
+        const coinStartX = carX + 200;
+        
+        for (let c = 0; c < numCoins; c++) {
+          coinObjects.push({
+            x: coinStartX + c * coinSpacing,
+            y: groundY - 35,
+            width: 30,
+            height: 30,
+            collected: false
+          });
+        }
+      }
+      
+      for (let i = obstacles.length - 1; i >= 0; i--) {
+        const obs = obstacles[i];
+        obs.x -= gameSpeed;
+        
+        const isTaxi = obs.color === "#FFD700";
+        const wheelY = groundY + 3;
+        const bodyY = groundY - 50;
+        
+        function adjustBrightnessCar(color, amount) {
+          const num = parseInt(color.replace("#",""), 16);
+          const r = Math.max(0, Math.min(255, (num >> 16) + amount));
+          const g = Math.max(0, Math.min(255, ((num >> 8) & 0x00FF) + amount));
+          const b = Math.max(0, Math.min(255, (num & 0x0000FF) + amount));
+          return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
+        }
+        
+        const wheelPositions = [obs.x + 32, obs.x + obs.width - 32];
+        for (let wx of wheelPositions) {
+          ctx.fillStyle = "#000000";
+          ctx.beginPath();
+          ctx.arc(wx, wheelY, 14, 0, Math.PI * 2);
+          ctx.fill();
+          
+          ctx.fillStyle = "#B8B8B8";
+          ctx.beginPath();
+          ctx.arc(wx, wheelY, 10, 0, Math.PI * 2);
+          ctx.fill();
+          
+          ctx.fillStyle = "#666666";
+          ctx.beginPath();
+          ctx.arc(wx, wheelY, 5, 0, Math.PI * 2);
+          ctx.fill();
+          
+          ctx.strokeStyle = "#888888";
+          ctx.lineWidth = 1;
+          for (let angle = 0; angle < Math.PI * 2; angle += Math.PI / 2) {
+            ctx.beginPath();
+            ctx.moveTo(wx, wheelY);
+            ctx.lineTo(wx + Math.cos(angle) * 8, wheelY + Math.sin(angle) * 8);
+            ctx.stroke();
+          }
+        }
+        
+        ctx.fillStyle = obs.color;
+        ctx.strokeStyle = "#000000";
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.roundRect(obs.x, bodyY, obs.width, 45, 8);
+        ctx.fill();
+        ctx.stroke();
+        
+        ctx.strokeStyle = adjustBrightnessCar(obs.color, 40);
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(obs.x + 20, bodyY + 22);
+        ctx.lineTo(obs.x + obs.width - 20, bodyY + 22);
+        ctx.stroke();
+        
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(obs.x + 25, bodyY + 34);
+        ctx.lineTo(obs.x + obs.width - 25, bodyY + 34);
+        ctx.stroke();
+        
+        ctx.fillStyle = adjustBrightnessCar(obs.color, 40);
+        ctx.beginPath();
+        ctx.roundRect(obs.x + 5, bodyY - 8, obs.width - 10, 22, [6, 6, 0, 0]);
+        ctx.fill();
+        
+        const cabinX = obs.x + 28;
+        const cabinWidth = obs.width - 56;
+        const cabinY = bodyY - 48;
+        ctx.fillStyle = adjustBrightnessCar(obs.color, -30);
+        ctx.strokeStyle = "#000000";
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.roundRect(cabinX, cabinY, cabinWidth, 45, [8, 8, 0, 0]);
+        ctx.fill();
+        ctx.stroke();
+        
+        ctx.fillStyle = "rgba(70, 130, 220, 0.6)";
+        ctx.strokeStyle = "#000000";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(cabinX + 4, cabinY + 45);
+        ctx.lineTo(cabinX + 20, cabinY + 4);
+        ctx.lineTo(cabinX + 35, cabinY + 4);
+        ctx.lineTo(cabinX + 24, cabinY + 45);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+        
+        ctx.beginPath();
+        ctx.moveTo(cabinX + cabinWidth - 4, cabinY + 45);
+        ctx.lineTo(cabinX + cabinWidth - 20, cabinY + 4);
+        ctx.lineTo(cabinX + cabinWidth - 35, cabinY + 4);
+        ctx.lineTo(cabinX + cabinWidth - 24, cabinY + 45);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+        
+        const lightsOn = Math.random() > 0.5;
+        ctx.fillStyle = lightsOn ? "#FFFF00" : "#FFFFE0";
+        ctx.strokeStyle = "#000000";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        if (isTaxi) {
+          ctx.rect(obs.x + 8, bodyY + 12, 10, 10);
+        } else {
+          ctx.arc(obs.x + 10, bodyY + 16, 8, 0, Math.PI * 2);
+        }
+        ctx.fill();
+        ctx.stroke();
+        
+        ctx.fillStyle = lightsOn ? "#FFFFFF" : "#FFFFCC";
+        ctx.beginPath();
+        if (isTaxi) {
+          ctx.rect(obs.x + 10, bodyY + 14, 6, 6);
+        } else {
+          ctx.arc(obs.x + 10, bodyY + 16, 5, 0, Math.PI * 2);
+        }
+        ctx.fill();
+        
+        if (lightsOn) {
+          ctx.fillStyle = "rgba(255, 255, 0, 0.3)";
+          ctx.beginPath();
+          ctx.arc(obs.x - 2, bodyY + 16, 18, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        
+        ctx.fillStyle = "#FF3333";
+        ctx.strokeStyle = "#000000";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        if (isTaxi) {
+          ctx.rect(obs.x + obs.width - 18, bodyY + 12, 10, 10);
+        } else {
+          ctx.arc(obs.x + obs.width - 10, bodyY + 16, 8, 0, Math.PI * 2);
+        }
+        ctx.fill();
+        ctx.stroke();
+        
+        ctx.fillStyle = "#CC0000";
+        ctx.beginPath();
+        if (isTaxi) {
+          ctx.rect(obs.x + obs.width - 16, bodyY + 14, 6, 6);
+        } else {
+          ctx.arc(obs.x + obs.width - 10, bodyY + 16, 5, 0, Math.PI * 2);
+        }
+        ctx.fill();
+        
+        ctx.fillStyle = "#FFA500";
+        ctx.beginPath();
+        ctx.arc(obs.x + 10, bodyY + 28, 3, 0, Math.PI * 2);
+        ctx.arc(obs.x + obs.width - 10, bodyY + 28, 3, 0, Math.PI * 2);
+        ctx.fill();
+        
+        ctx.fillStyle = "#000000";
+        ctx.beginPath();
+        ctx.ellipse(obs.x + 24, cabinY + 22, 4, 6, 0, 0, Math.PI * 2);
+        ctx.ellipse(obs.x + obs.width - 24, cabinY + 22, 4, 6, 0, 0, Math.PI * 2);
+        ctx.fill();
+        
+        ctx.strokeStyle = "#000000";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(obs.x + 40, bodyY + 38);
+        ctx.lineTo(obs.x + 50, bodyY + 38);
+        ctx.moveTo(obs.x + 90, bodyY + 38);
+        ctx.lineTo(obs.x + 100, bodyY + 38);
+        ctx.stroke();
+        
+        if (isTaxi) {
+          ctx.fillStyle = "#000000";
+          ctx.fillRect(obs.x + obs.width/2 - 24, cabinY - 16, 48, 16);
+          ctx.strokeStyle = "#FFFFFF";
+          ctx.lineWidth = 1;
+          ctx.strokeRect(obs.x + obs.width/2 - 24, cabinY - 16, 48, 16);
+          
+          ctx.fillStyle = "#FFFFFF";
+          ctx.font = "bold 12px 'Courier New'";
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          ctx.fillText("TAXI", obs.x + obs.width/2, cabinY - 8);
+          
+          ctx.fillStyle = "#000000";
+          ctx.font = "bold 22px 'Courier New'";
+          ctx.textAlign = "center";
+          ctx.fillText("TAXI", obs.x + obs.width/2, bodyY + 28);
+          
+          ctx.fillStyle = "#000000";
+          for (let i = 0; i < 6; i++) {
+            ctx.fillRect(obs.x + 14 + i * 12, bodyY + 42, 10, 8);
+          }
+        }
+        
+        if (obs.x + obs.width < 0) {
+          obstacles.splice(i, 1);
+          score += 10;
+          updateUI();
+        }
+        
+        const playerBottom = player.y + player.height;
+        const playerTop = player.y;
+        const obsTop = bodyY - 60;
+        
+        const isOnTopOfCar = playerBottom <= obsTop + 10 && 
+                           playerBottom >= obsTop - 5 &&
+                           player.x + player.width > obs.x + 5 &&
+                           player.x < obs.x + obs.width - 5 &&
+                           player.velocityY >= 0;
+        
+        if (isOnTopOfCar) {
+          player.y = obsTop - player.height;
+          player.velocityY = 0;
+          player.jumping = false;
+          player.grounded = true;
+          
+          if (!obs.wasJumpedOn) {
+            obs.wasJumpedOn = true;
+            currentGameCarsJumped++;
+            if (isTaxi) {
+              currentGameTaxisJumped++;
+            }
+          }
+        } else if (player.x < obs.x + obs.width - 10 &&
+                   player.x + player.width > obs.x + 10 &&
+                   playerTop < bodyY + 55 &&
+                   playerBottom > bodyY) {
+          endGame();
+          return;
+        }
+      }
+      
+      for (let i = coinObjects.length - 1; i >= 0; i--) {
+        const coin = coinObjects[i];
+        if (!coin.collected) {
+          coin.x -= gameSpeed;
+          
+          const cx = coin.x + coin.width/2;
+          const cy = coin.y + coin.height/2;
+          const r = coin.width/2;
+          
+          ctx.fillStyle = "#FFD700";
+          ctx.beginPath();
+          ctx.arc(cx, cy, r, 0, Math.PI * 2);
+          ctx.fill();
+          
+          ctx.strokeStyle = "#B8860B";
+          ctx.lineWidth = 3;
+          ctx.stroke();
+          
+          ctx.strokeStyle = "#FFA500";
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.arc(cx, cy, r - 4, 0, Math.PI * 2);
+          ctx.stroke();
+          
+          ctx.fillStyle = "#8B6914";
+          ctx.font = "bold 16px Arial";
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          ctx.fillText("$", cx, cy);
+          
+          ctx.fillStyle = "rgba(255, 255, 255, 0.5)";
+          ctx.beginPath();
+          ctx.arc(cx - 4, cy - 4, 4, 0, Math.PI * 2);
+          ctx.fill();
+          
+          if (coin.x + coin.width < 0) {
+            coinObjects.splice(i, 1);
+          }
+          
+          if (player.x < coin.x + coin.width &&
+              player.x + player.width > coin.x &&
+              player.y < coin.y + coin.height &&
+              player.y + player.height > coin.y) {
+            coin.collected = true;
+            coins++;
+            score += 5;
+            updateUI();
+            coinObjects.splice(i, 1);
+          }
+        }
+      }
+      
+      if (frameCount % 60 === 0) {
+        distance++;
+        updateUI();
+      }
+      
+      requestAnimationFrame(gameLoop);
+    }
+    
+    async function endGame() {
+      gameRunning = false;
+      
+      document.getElementById('finalCoins').textContent = coins;
+      document.getElementById('finalDistance').textContent = distance;
+      
+      checkMissionProgress();
+      
+      if (window.dataSdk && isInitialized) {
+        const createResult = await window.dataSdk.create({
+          id: Date.now().toString(),
+          score: score,
+          coins: coins,
+          distance: distance,
+          cars_jumped: currentGameCarsJumped,
+          taxis_jumped: currentGameTaxisJumped,
+          tickets: playerData.tickets,
+          credits: playerData.credits,
+          avenue_level: playerData.avenue_level,
+          avenue_claimed: playerData.avenue_claimed,
+          avenue_first_visit: playerData.avenue_first_visit,
+          mission1_stage: playerData.mission1_stage,
+          mission2_stage: playerData.mission2_stage,
+          mission3_stage: playerData.mission3_stage,
+          mission4_stage: playerData.mission4_stage,
+          mission5_stage: playerData.mission5_stage,
+          mission1_claimed: playerData.mission1_claimed,
+          mission2_claimed: playerData.mission2_claimed,
+          mission3_claimed: playerData.mission3_claimed,
+          mission4_claimed: playerData.mission4_claimed,
+          mission5_claimed: playerData.mission5_claimed,
+          owned_characters: playerData.owned_characters,
+          active_character: playerData.active_character,
+          active_variant: playerData.active_variant,
+          timestamp: new Date().toISOString()
+        });
+        
+        if (!createResult.isOk) {
+          console.error("Nie udało się zapisać wyniku");
+        }
+      }
+      
+      document.getElementById('gameOver').style.display = 'block';
+    }
+    
+    function checkMissionProgress() {
+      if (playerData.mission1_stage <= 10 && coins >= 250) {
+        playerData.mission1_claimed = false;
+      }
+      
+      if (playerData.mission3_stage <= 5 && currentGameCarsJumped >= 30) {
+        playerData.mission3_claimed = false;
+      }
+      
+      if (playerData.mission4_stage <= 5 && currentGameTaxisJumped >= 10) {
+        playerData.mission4_claimed = false;
+      }
+      
+      const totalCoins = allRecords.reduce((sum, r) => sum + (r.coins || 0), 0) + coins;
+      const mission2Target = playerData.mission2_stage * 1500;
+      if (playerData.mission2_stage <= 10 && totalCoins >= mission2Target) {
+        playerData.mission2_claimed = false;
+      }
+      
+      const totalCars = allRecords.reduce((sum, r) => sum + (r.cars_jumped || 0), 0) + currentGameCarsJumped;
+      const mission5Target = playerData.mission5_stage * 150;
+      if (playerData.mission5_stage <= 15 && totalCars >= mission5Target) {
+        playerData.mission5_claimed = false;
+      }
+    }
+    
+    function jump() {
+      if (player.grounded && !player.jumping) {
+        player.velocityY = jumpForce;
+        player.jumping = true;
+        player.grounded = false;
+      }
+    }
+    
+    document.addEventListener('keydown', (e) => {
+      if (gameRunning && (e.code === 'Space' || e.code === 'ArrowUp')) {
+        e.preventDefault();
+        jump();
+      }
+    });
+    
+    canvas.addEventListener('click', () => {
+      if (gameRunning) {
+        jump();
+      }
+    });
+    
+    canvas.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      if (gameRunning) {
+        jump();
+      }
+    });
+    
+    document.getElementById('startButton').addEventListener('click', startGame);
+    document.getElementById('restartButton').addEventListener('click', startGame);
+    document.getElementById('menuButton').addEventListener('click', () => {
+      document.getElementById('gameOver').style.display = 'none';
+      document.getElementById('menu').style.display = 'flex';
+      document.getElementById('gameCanvas').style.display = 'none';
+      document.getElementById('gameUI').style.display = 'none';
+      
+      setTimeout(() => {
+        drawMenuCoinIcon();
+        drawMenuDistanceIcon();
+      }, 50);
+    });
+    
+    document.getElementById('missionsButton').addEventListener('click', () => {
+      document.getElementById('menu').style.display = 'none';
+      document.getElementById('missionsScreen').style.display = 'block';
+      const config = window.elementSdk ? window.elementSdk.config : defaultConfig;
+      document.getElementById('missionsScreen').style.backgroundColor = config.background_color || defaultConfig.background_color;
+      updateMissionsDisplay();
+      drawTicketIcon('ticketIconHeader', 32);
+    });
+    
+    document.getElementById('backToMenuButton').addEventListener('click', () => {
+      document.getElementById('missionsScreen').style.display = 'none';
+      document.getElementById('menu').style.display = 'flex';
+    });
+    
+    document.getElementById('avenueButton').addEventListener('click', () => {
+      document.getElementById('menu').style.display = 'none';
+      document.getElementById('avenueScreen').style.display = 'block';
+      const config = window.elementSdk ? window.elementSdk.config : defaultConfig;
+      document.getElementById('avenueScreen').style.backgroundColor = config.background_color || defaultConfig.background_color;
+      
+      if (playerData.avenue_first_visit) {
+        document.getElementById('avenueWelcome').style.display = 'flex';
+      }
+      
+      updateAvenueDisplay();
+      drawTicketIcon('ticketIconAvenueHeader', 32);
+      drawCreditIcon('creditIconAvenueHeader', 32);
+    });
+    
+    document.getElementById('startAvenueButton').addEventListener('click', async () => {
+      document.getElementById('avenueWelcome').style.display = 'none';
+      playerData.avenue_first_visit = false;
+      
+      if (window.dataSdk && isInitialized) {
+        await window.dataSdk.create({
+          id: Date.now().toString(),
+          score: 0,
+          coins: 0,
+          distance: 0,
+          cars_jumped: 0,
+          taxis_jumped: 0,
+          tickets: playerData.tickets,
+          credits: playerData.credits,
+          avenue_level: playerData.avenue_level,
+          avenue_claimed: playerData.avenue_claimed,
+          avenue_first_visit: false,
+          mission1_stage: playerData.mission1_stage,
+          mission2_stage: playerData.mission2_stage,
+          mission3_stage: playerData.mission3_stage,
+          mission4_stage: playerData.mission4_stage,
+          mission5_stage: playerData.mission5_stage,
+          mission1_claimed: playerData.mission1_claimed,
+          mission2_claimed: playerData.mission2_claimed,
+          mission3_claimed: playerData.mission3_claimed,
+          mission4_claimed: playerData.mission4_claimed,
+          mission5_claimed: playerData.mission5_claimed,
+          owned_characters: playerData.owned_characters,
+          active_character: playerData.active_character,
+          active_variant: playerData.active_variant,
+          timestamp: new Date().toISOString()
+        });
+      }
+    });
+    
+    document.getElementById('backToMenuFromAvenue').addEventListener('click', () => {
+      document.getElementById('avenueScreen').style.display = 'none';
+      document.getElementById('menu').style.display = 'flex';
+    });
+    
+    document.getElementById('shopButton').addEventListener('click', () => {
+      document.getElementById('menu').style.display = 'none';
+      document.getElementById('shopScreen').style.display = 'block';
+      const config = window.elementSdk ? window.elementSdk.config : defaultConfig;
+      document.getElementById('shopScreen').style.backgroundColor = config.background_color || defaultConfig.background_color;
+      updateShopDisplay();
+      drawCreditIcon('creditIconShopHeader', 32);
+    });
+    
+    document.getElementById('backToMenuFromShop').addEventListener('click', () => {
+      document.getElementById('shopScreen').style.display = 'none';
+      document.getElementById('menu').style.display = 'flex';
+    });
+    
+    function updateShopDisplay() {
+      const shopList = document.getElementById('shopCharactersList');
+      if (!shopList) return;
+      
+      const allOffers = [];
+      Object.keys(characterData).forEach(charKey => {
+        const char = characterData[charKey];
+        char.variants.forEach(variant => {
+          // Ukryj darmowe postacie (cost === 0) w sklepie
+          if (variant.cost > 0) {
+            allOffers.push({
+              charKey: charKey,
+              charName: char.name,
+              variant: variant
+            });
+          }
+        });
+      });
+      
+      shopList.innerHTML = `<div style="display: flex; gap: 20px; flex-wrap: wrap;">${allOffers.map(offer => {
+        const canBuy = !offer.variant.owned && playerData.credits >= offer.variant.cost;
+        const isActive = playerData.active_character === offer.charKey && playerData.active_variant === offer.variant.id;
+        const canActivate = offer.variant.owned && !isActive;
+        
+        return `
+          <div style="background: white; border: 4px solid black; box-shadow: 6px 6px 0 rgba(0,0,0,1); padding: 20px; margin-bottom: 20px; max-width: 320px;">
+            <h2 style="margin: 0 0 15px 0; font-size: 24px; color: black;">${offer.variant.name}</h2>
+            
+            <div style="width: 140px; height: 200px; background: #f0f0f0; border: 3px solid black; margin: 0 auto 15px; display: flex; align-items: center; justify-content: center; position: relative;">
+              <img src="${offer.variant.image}" style="max-width: 100%; max-height: 100%; object-fit: contain;" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+              <div style="display: none; font-size: 12px; color: #666;">Brak obrazka</div>
+              ${isActive ? '<div style="position: absolute; top: 5px; right: 5px; background: #4CAF50; color: white; padding: 4px 8px; font-size: 10px; font-weight: bold; border: 2px solid black;">AKTYWNA</div>' : ''}
+              ${!offer.variant.owned ? '<div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; color: white; font-size: 28px; font-weight: bold;">🔒</div>' : ''}
+            </div>
+            
+            <div style="text-align: center; margin-bottom: 15px;">
+              <div style="display: flex; align-items: center; justify-content: center; gap: 6px; margin-bottom: 10px;">
+                ${offer.variant.cost > 0 ? `
+                  <canvas id="shopPriceIcon_${offer.charKey}_${offer.variant.id}" width="20" height="20"></canvas>
+                  <span style="font-size: 18px; font-weight: bold; color: black;">${offer.variant.cost}</span>
+                ` : '<span style="font-size: 16px; font-weight: bold; color: #4CAF50;">DARMOWA</span>'}
+              </div>
+            </div>
+            
+            ${!offer.variant.owned ? `
+              <button 
+                onclick="buyCharacterVariant('${offer.charKey}', ${offer.variant.id})"
+                style="
+                  padding: 12px 24px;
+                  font-size: 16px;
+                  font-weight: bold;
+                  background: ${canBuy ? '#4CAF50' : '#cccccc'};
+                  color: white;
+                  border: 3px solid black;
+                  border-radius: 0;
+                  cursor: ${canBuy ? 'pointer' : 'not-allowed'};
+                  transition: all 0.1s;
+                  box-shadow: 4px 4px 0 rgba(0,0,0,1);
+                  width: 100%;
+                  ${canBuy ? '' : 'opacity: 0.6;'}
+                "
+                ${!canBuy ? 'disabled' : ''}
+              >
+                KUP za ${offer.variant.cost} kredytów
+              </button>
+            ` : canActivate ? `
+              <button 
+                onclick="activateCharacterVariant('${offer.charKey}', ${offer.variant.id})"
+                style="
+                  padding: 12px 24px;
+                  font-size: 16px;
+                  font-weight: bold;
+                  background: #2196F3;
+                  color: white;
+                  border: 3px solid black;
+                  border-radius: 0;
+                  cursor: pointer;
+                  transition: all 0.1s;
+                  box-shadow: 4px 4px 0 rgba(0,0,0,1);
+                  width: 100%;
+                "
+              >
+                WYBIERZ
+              </button>
+            ` : '<div style="color: #4CAF50; font-weight: bold; padding: 12px; font-size: 16px; text-align: center;">✓ AKTYWNA</div>'}
+          </div>
+        `;
+      }).join('')}</div>`;
+      
+      allOffers.forEach(offer => {
+        if (offer.variant.cost > 0) {
+          setTimeout(() => drawCreditIcon(`shopPriceIcon_${offer.charKey}_${offer.variant.id}`, 20), 50);
+        }
+      });
+      
+      if (document.getElementById('totalCreditsShop')) {
+        document.getElementById('totalCreditsShop').textContent = playerData.credits;
+      }
+    }
+    
+    let shopSelectedVariants = {};
+    
+    function selectShopVariant(charKey, variantId) {
+      shopSelectedVariants[charKey] = variantId;
+      
+      const char = characterData[charKey];
+      const selectedVariant = char.variants.find(v => v.id === variantId);
+      if (!selectedVariant) return;
+      
+      const canBuy = !selectedVariant.owned && playerData.credits >= selectedVariant.cost;
+      const isActive = playerData.active_character === charKey && playerData.active_variant === variantId;
+      const canActivate = selectedVariant.owned && !isActive;
+      
+      const imgElement = document.getElementById(`shopCharImg_${charKey}`);
+      if (imgElement) {
+        imgElement.src = selectedVariant.image;
+      }
+      
+      const nameElement = document.getElementById(`shopCharName_${charKey}`);
+      if (nameElement) {
+        nameElement.textContent = selectedVariant.name;
+      }
+      
+      const priceElement = document.getElementById(`shopCharPrice_${charKey}`);
+      if (priceElement) {
+        if (selectedVariant.cost > 0) {
+          priceElement.innerHTML = `
+            <canvas id="shopPriceIcon_${charKey}" width="20" height="20"></canvas>
+            <span style="font-size: 18px; font-weight: bold; color: black;">${selectedVariant.cost}</span>
+          `;
+          setTimeout(() => drawCreditIcon(`shopPriceIcon_${charKey}`, 20), 10);
+        } else {
+          priceElement.innerHTML = '<span style="font-size: 16px; font-weight: bold; color: #4CAF50;">DARMOWA</span>';
+        }
+      }
+      
+      const buyBtn = document.getElementById(`shopBuyBtn_${charKey}`);
+      const activateBtn = document.getElementById(`shopActivateBtn_${charKey}`);
+      
+      const parentDiv = buyBtn ? buyBtn.parentElement : (activateBtn ? activateBtn.parentElement : null);
+      if (parentDiv) {
+        if (!selectedVariant.owned) {
+          parentDiv.innerHTML = `
+            <button 
+              id="shopBuyBtn_${charKey}"
+              onclick="buyCharacterVariant('${charKey}', ${variantId})"
+              style="
+                padding: 12px 24px;
+                font-size: 16px;
+                font-weight: bold;
+                background: ${canBuy ? '#4CAF50' : '#cccccc'};
+                color: white;
+                border: 3px solid black;
+                border-radius: 0;
+                cursor: ${canBuy ? 'pointer' : 'not-allowed'};
+                transition: all 0.1s;
+                box-shadow: 4px 4px 0 rgba(0,0,0,1);
+                width: 100%;
+                ${canBuy ? '' : 'opacity: 0.6;'}
+              "
+              ${!canBuy ? 'disabled' : ''}
+            >
+              KUP za ${selectedVariant.cost} kredytów
+            </button>
+          `;
+        } else if (canActivate) {
+          parentDiv.innerHTML = `
+            <button 
+              id="shopActivateBtn_${charKey}"
+              onclick="activateCharacterVariant('${charKey}', ${variantId})"
+              style="
+                padding: 12px 24px;
+                font-size: 16px;
+                font-weight: bold;
+                background: #2196F3;
+                color: white;
+                border: 3px solid black;
+                border-radius: 0;
+                cursor: pointer;
+                transition: all 0.1s;
+                box-shadow: 4px 4px 0 rgba(0,0,0,1);
+                width: 100%;
+              "
+            >
+              WYBIERZ
+            </button>
+          `;
+        } else {
+          parentDiv.innerHTML = '<div style="color: #4CAF50; font-weight: bold; padding: 12px; font-size: 16px; text-align: center;">✓ AKTYWNA</div>';
+        }
+      }
+      
+      const circles = document.querySelectorAll(`[onclick*="selectShopVariant('${charKey}',"]`);
+      circles.forEach((circle, index) => {
+        if (index + 1 === variantId) {
+          circle.style.border = '3px solid #000000';
+          circle.style.boxShadow = '0 0 10px rgba(0,0,0,0.5)';
+        } else {
+          circle.style.border = '3px solid #666666';
+          circle.style.boxShadow = 'none';
+        }
+      });
+    }
+    
+    window.selectShopVariant = selectShopVariant;
+    
+    async function buyCharacterVariant(charKey, variantId) {
+      const char = characterData[charKey];
+      const variant = char.variants.find(v => v.id === variantId);
+      
+      if (!variant || variant.owned) return;
+      if (playerData.credits < variant.cost) return;
+      
+      playerData.credits -= variant.cost;
+      variant.owned = true;
+      
+      const ownedList = playerData.owned_characters.split(',').filter(s => s);
+      ownedList.push(`${charKey}_${variantId}`);
+      playerData.owned_characters = ownedList.join(',');
+      
+      if (window.dataSdk && isInitialized) {
+        await window.dataSdk.create({
+          id: Date.now().toString(),
+          score: 0,
+          coins: 0,
+          distance: 0,
+          cars_jumped: 0,
+          taxis_jumped: 0,
+          tickets: playerData.tickets,
+          credits: playerData.credits,
+          avenue_level: playerData.avenue_level,
+          avenue_claimed: playerData.avenue_claimed,
+          avenue_first_visit: playerData.avenue_first_visit,
+          mission1_stage: playerData.mission1_stage,
+          mission2_stage: playerData.mission2_stage,
+          mission3_stage: playerData.mission3_stage,
+          mission4_stage: playerData.mission4_stage,
+          mission5_stage: playerData.mission5_stage,
+          mission1_claimed: playerData.mission1_claimed,
+          mission2_claimed: playerData.mission2_claimed,
+          mission3_claimed: playerData.mission3_claimed,
+          mission4_claimed: playerData.mission4_claimed,
+          mission5_claimed: playerData.mission5_claimed,
+          owned_characters: playerData.owned_characters,
+          active_character: playerData.active_character,
+          active_variant: playerData.active_variant,
+          timestamp: new Date().toISOString()
+        });
+      }
+      
+      updateShopDisplay();
+    }
+    
+    async function activateCharacterVariant(charKey, variantId) {
+      playerData.active_character = charKey;
+      playerData.active_variant = variantId;
+      
+      if (window.dataSdk && isInitialized) {
+        await window.dataSdk.create({
+          id: Date.now().toString(),
+          score: 0,
+          coins: 0,
+          distance: 0,
+          cars_jumped: 0,
+          taxis_jumped: 0,
+          tickets: playerData.tickets,
+          credits: playerData.credits,
+          avenue_level: playerData.avenue_level,
+          avenue_claimed: playerData.avenue_claimed,
+          avenue_first_visit: playerData.avenue_first_visit,
+          mission1_stage: playerData.mission1_stage,
+          mission2_stage: playerData.mission2_stage,
+          mission3_stage: playerData.mission3_stage,
+          mission4_stage: playerData.mission4_stage,
+          mission5_stage: playerData.mission5_stage,
+          mission1_claimed: playerData.mission1_claimed,
+          mission2_claimed: playerData.mission2_claimed,
+          mission3_claimed: playerData.mission3_claimed,
+          mission4_claimed: playerData.mission4_claimed,
+          mission5_claimed: playerData.mission5_claimed,
+          owned_characters: playerData.owned_characters,
+          active_character: playerData.active_character,
+          active_variant: playerData.active_variant,
+          timestamp: new Date().toISOString()
+        });
+      }
+      
+      updateShopDisplay();
+    }
+    
+    window.buyCharacterVariant = buyCharacterVariant;
+    window.activateCharacterVariant = activateCharacterVariant;
+    
+    function updateMissionsDisplay() {
+      const missionsList = document.getElementById('missionsList');
+      if (!missionsList) return;
+      
+      const totalCoins = allRecords.reduce((sum, r) => sum + (r.coins || 0), 0);
+      const totalCars = allRecords.reduce((sum, r) => sum + (r.cars_jumped || 0), 0);
+      
+      const missions = [
+        {
+          id: 1,
+          title: "Zbierz 250 monet w jednej rundzie",
+          description: "Samochody: co 180 klatek | Monety: 3-25 monet między samochodami",
+          reward: 25,
+          maxStages: 10,
+          currentStage: playerData.mission1_stage,
+          claimed: playerData.mission1_claimed,
+          check: () => {
+            if (allRecords.length === 0) return false;
+            const lastGame = allRecords[allRecords.length - 1];
+            return (lastGame.coins || 0) >= 250;
+          }
+        },
+        {
+          id: 2,
+          title: "Zbierz łącznie 1500 monet",
+          description: "Samochody: co 180 klatek | Monety: 3-25 monet między samochodami",
+          reward: 25,
+          maxStages: 10,
+          currentStage: playerData.mission2_stage,
+          claimed: playerData.mission2_claimed,
+          progress: totalCoins,
+          target: playerData.mission2_stage * 1500,
+          check: () => totalCoins >= playerData.mission2_stage * 1500
+        },
+        {
+          id: 3,
+          title: "Przeskocz 30 samochodów w jednej grze",
+          description: "Przeskakuj na samochody aby liczyć | Samochody: co 180 klatek",
+          reward: 50,
+          maxStages: 5,
+          currentStage: playerData.mission3_stage,
+          claimed: playerData.mission3_claimed,
+          check: () => {
+            if (allRecords.length === 0) return false;
+            const lastGame = allRecords[allRecords.length - 1];
+            const carsInLastGame = lastGame.cars_jumped || 0;
+            return carsInLastGame >= 30;
+          },
+          progress: () => {
+            if (allRecords.length === 0) return 0;
+            const lastGame = allRecords[allRecords.length - 1];
+            return lastGame.cars_jumped || 0;
+          },
+          target: 30
+        },
+        {
+          id: 4,
+          title: "Przeskocz 10 taxi w jednej grze",
+          description: "Żółte samochody z napisem TAXI | Samochody: co 180 klatek",
+          reward: 50,
+          maxStages: 5,
+          currentStage: playerData.mission4_stage,
+          claimed: playerData.mission4_claimed,
+          check: () => {
+            if (allRecords.length === 0) return false;
+            const lastGame = allRecords[allRecords.length - 1];
+            return (lastGame.taxis_jumped || 0) >= 10;
+          }
+        },
+        {
+          id: 5,
+          title: "Przeskocz łącznie 150 samochodów",
+          description: "Przeskakuj na samochody aby liczyć | Samochody: co 180 klatek",
+          reward: 100,
+          maxStages: 15,
+          currentStage: playerData.mission5_stage,
+          claimed: playerData.mission5_claimed,
+          progress: totalCars,
+          target: playerData.mission5_stage * 150,
+          check: () => totalCars >= playerData.mission5_stage * 150
+        }
+      ];
+      
+      missionsList.innerHTML = missions.map(mission => {
+        const isCompleted = mission.currentStage > mission.maxStages;
+        const canClaim = mission.check() && !mission.claimed && mission.currentStage <= mission.maxStages;
+        
+        let statusText = '';
+        if (isCompleted) {
+          statusText = '<span style="color: #4CAF50; font-weight: bold;">✓ UKOŃCZONA</span>';
+        } else {
+          statusText = `Etap ${mission.currentStage}/${mission.maxStages}`;
+        }
+        
+        let progressBar = '';
+        if (mission.progress !== undefined && mission.target !== undefined) {
+          const progressValue = typeof mission.progress === 'function' ? mission.progress() : mission.progress;
+          const percentage = Math.min(100, (progressValue / mission.target) * 100);
+          progressBar = `
+            <div style="margin-top: 10px;">
+              <div style="background: #333; height: 20px; border: 2px solid black; position: relative; overflow: hidden;">
+                <div style="background: linear-gradient(90deg, #4CAF50, #45a049); height: 100%; width: ${percentage}%; transition: width 0.3s;"></div>
+              </div>
+              <div style="text-align: center; margin-top: 5px; font-size: 14px; color: white;">
+                ${progressValue} / ${mission.target}
+              </div>
+            </div>
+          `;
+        }
+        
+        return `
+          <div style="background: white; border: 4px solid black; box-shadow: 6px 6px 0 rgba(0,0,0,1); padding: 25px; margin-bottom: 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 15px;">
+              <div style="flex: 1;">
+                <h3 style="margin: 0 0 10px 0; font-size: 22px; color: black;">${mission.title}</h3>
+                <div style="color: #666; font-size: 14px; margin-bottom: 5px;">${mission.description}</div>
+                <div style="color: #666; font-size: 16px;">${statusText}</div>
+              </div>
+              <div style="display: flex; align-items: center; gap: 8px; padding: 10px 15px; background: #FFF9E6; border: 3px solid #FFD700; border-radius: 8px;">
+                <canvas id="ticketIcon${mission.id}" width="24" height="24"></canvas>
+                <span style="font-size: 20px; font-weight: bold; color: black;">${mission.reward}</span>
+              </div>
+            </div>
+            ${progressBar}
+            ${!isCompleted ? `
+              <button 
+                id="claimMission${mission.id}" 
+                onclick="claimMissionReward(${mission.id})"
+                style="
+                  margin-top: 15px;
+                  padding: 12px 25px;
+                  font-size: 18px;
+                  font-weight: bold;
+                  background: ${canClaim ? '#4CAF50' : '#cccccc'};
+                  color: white;
+                  border: 3px solid black;
+                  border-radius: 0;
+                  cursor: ${canClaim ? 'pointer' : 'not-allowed'};
+                  transition: all 0.1s;
+                  box-shadow: 4px 4px 0 rgba(0,0,0,1);
+                  width: 100%;
+                  ${canClaim ? '' : 'opacity: 0.6;'}
+                "
+                ${!canClaim ? 'disabled' : ''}
+              >
+                ${canClaim ? 'ODBIERZ NAGRODĘ' : 'WYKONAJ MISJĘ'}
+              </button>
+            ` : ''}
+          </div>
+        `;
+      }).join('');
+      
+      missions.forEach(mission => {
+        setTimeout(() => drawTicketIcon(`ticketIcon${mission.id}`, 24), 50);
+      });
+      
+      if (document.getElementById('totalTickets')) {
+        document.getElementById('totalTickets').textContent = playerData.tickets;
+      }
+    }
+    
+    async function claimMissionReward(missionId) {
+      const missionKey = `mission${missionId}_stage`;
+      const claimedKey = `mission${missionId}_claimed`;
+      
+      const missions = [
+        { id: 1, reward: 25, maxStages: 10 },
+        { id: 2, reward: 25, maxStages: 10 },
+        { id: 3, reward: 50, maxStages: 5 },
+        { id: 4, reward: 50, maxStages: 5 },
+        { id: 5, reward: 100, maxStages: 15 }
+      ];
+      
+      const mission = missions.find(m => m.id === missionId);
+      if (!mission) return;
+      
+      if (playerData[missionKey] <= mission.maxStages) {
+        playerData.tickets += mission.reward;
+        playerData[missionKey]++;
+        playerData[claimedKey] = true;
+        
+        if (window.dataSdk && isInitialized) {
+          await window.dataSdk.create({
+            id: Date.now().toString(),
+            score: 0,
+            coins: 0,
+            distance: 0,
+            cars_jumped: 0,
+            taxis_jumped: 0,
+            tickets: playerData.tickets,
+            credits: playerData.credits,
+            avenue_level: playerData.avenue_level,
+            avenue_claimed: playerData.avenue_claimed,
+            avenue_first_visit: playerData.avenue_first_visit,
+            mission1_stage: playerData.mission1_stage,
+            mission2_stage: playerData.mission2_stage,
+            mission3_stage: playerData.mission3_stage,
+            mission4_stage: playerData.mission4_stage,
+            mission5_stage: playerData.mission5_stage,
+            mission1_claimed: playerData.mission1_claimed,
+            mission2_claimed: playerData.mission2_claimed,
+            mission3_claimed: playerData.mission3_claimed,
+            mission4_claimed: playerData.mission4_claimed,
+            mission5_claimed: playerData.mission5_claimed,
+            owned_characters: playerData.owned_characters,
+            active_character: playerData.active_character,
+            active_variant: playerData.active_variant,
+            timestamp: new Date().toISOString()
+          });
+        }
+        
+        checkAllMissionsAfterClaim();
+        updateMissionsDisplay();
+      }
+    }
+    
+    function checkAllMissionsAfterClaim() {
+      const totalCoins = allRecords.reduce((sum, r) => sum + (r.coins || 0), 0);
+      const totalCars = allRecords.reduce((sum, r) => sum + (r.cars_jumped || 0), 0);
+      
+      while (playerData.mission2_stage <= 10 && totalCoins >= playerData.mission2_stage * 1500) {
+        playerData.mission2_claimed = false;
+        if (playerData.mission2_claimed === false) break;
+      }
+      
+      while (playerData.mission5_stage <= 15 && totalCars >= playerData.mission5_stage * 150) {
+        playerData.mission5_claimed = false;
+        if (playerData.mission5_claimed === false) break;
+      }
+    }
+    
+    function updateAvenueDisplay() {
+      const avenueContent = document.getElementById('avenueContent');
+      if (!avenueContent) return;
+      
+      const levels = [];
+      for (let i = 1; i <= 15; i++) {
+        const ticketsRequired = i === 1 ? 0 : 100;
+        const totalTicketsNeeded = i === 1 ? 0 : (i - 1) * 100;
+        
+        let rewardType, rewardAmount, rewardIcon;
+        if (i === 1) {
+          rewardType = 'coins';
+          rewardAmount = 500;
+          rewardIcon = 'coin';
+        } else if (i === 2) {
+          rewardType = 'credits';
+          rewardAmount = 3;
+          rewardIcon = 'credit';
+        } else if (i % 2 === 1) {
+          rewardType = 'coins';
+          rewardAmount = 250;
+          rewardIcon = 'coin';
+        } else {
+          rewardType = 'credits';
+          rewardAmount = 3;
+          rewardIcon = 'credit';
+        }
+        
+        levels.push({
+          level: i,
+          ticketsRequired: ticketsRequired,
+          totalTicketsNeeded: totalTicketsNeeded,
+          rewardType: rewardType,
+          rewardAmount: rewardAmount,
+          rewardIcon: rewardIcon
+        });
+      }
+      
+      avenueContent.innerHTML = `
+        <div style="background: white; border: 4px solid black; box-shadow: 6px 6px 0 rgba(0,0,0,1); padding: 30px; min-width: 1200px;">
+          <h2 style="margin: 0 0 30px 0; font-size: 32px; color: black; text-align: center;">🏙️ MIASTO: DUSTVALE</h2>
+          <div style="display: flex; gap: 20px; flex-wrap: nowrap; overflow-x: auto; padding-bottom: 10px;">
+            ${levels.map(level => {
+              const isUnlocked = playerData.tickets >= level.totalTicketsNeeded;
+              const isCurrent = playerData.avenue_level === level.level;
+              const canClaim = isCurrent && isUnlocked && !playerData.avenue_claimed;
+              const isClaimed = playerData.avenue_level > level.level;
+              
+              let statusBadge = '';
+              if (isClaimed) {
+                statusBadge = '<span style="color: #4CAF50; font-weight: bold; font-size: 12px;">✓ ODEBRANO</span>';
+              } else if (isCurrent && !canClaim) {
+                statusBadge = '<span style="color: #FF9800; font-weight: bold; font-size: 12px;">⭐ AKTUALNY</span>';
+              } else if (canClaim) {
+                statusBadge = '<span style="color: #2196F3; font-weight: bold; font-size: 12px;">🎁 GOTOWE!</span>';
+              } else {
+                statusBadge = '<span style="color: #999; font-weight: bold; font-size: 12px;">🔒 ZABLOKOWANY</span>';
+              }
+              
+              return `
+                <div style="
+                  background: ${isClaimed ? '#f0f0f0' : isUnlocked ? '#ffffff' : '#e0e0e0'};
+                  border: 3px solid ${isCurrent && canClaim ? '#4CAF50' : '#000000'};
+                  padding: 20px;
+                  display: flex;
+                  flex-direction: column;
+                  align-items: center;
+                  min-width: 200px;
+                  max-width: 200px;
+                  flex-shrink: 0;
+                  ${isCurrent && canClaim ? 'box-shadow: 0 0 15px rgba(76, 175, 80, 0.5);' : ''}
+                ">
+                  <div style="text-align: center; margin-bottom: 15px;">
+                    <div style="font-size: 24px; font-weight: bold; color: black; margin-bottom: 8px;">Poziom ${level.level}</div>
+                    ${statusBadge}
+                  </div>
+                  
+                  <div style="color: #666; font-size: 12px; text-align: center; margin-bottom: 15px; min-height: 40px;">
+                    ${level.ticketsRequired === 0 ? 'Bonus startowy!' : `Wymagane: ${level.ticketsRequired} ticketów<br>(Razem: ${level.totalTicketsNeeded})`}
+                  </div>
+                  
+                  <div style="display: flex; align-items: center; gap: 8px; padding: 10px 15px; background: ${level.rewardType === 'coins' ? '#FFF9E6' : '#E3F2FD'}; border: 3px solid ${level.rewardType === 'coins' ? '#FFD700' : '#4A90E2'}; border-radius: 8px; margin-bottom: 15px;">
+                    <canvas id="avenueReward${level.level}" width="24" height="24"></canvas>
+                    <span style="font-size: 20px; font-weight: bold; color: black;">${level.rewardAmount}</span>
+                  </div>
+                  
+                  ${!isClaimed ? `
+                    <button 
+                      onclick="claimAvenueReward(${level.level})"
+                      style="
+                        padding: 10px 20px;
+                        font-size: 14px;
+                        font-weight: bold;
+                        background: ${canClaim ? '#4CAF50' : '#cccccc'};
+                        color: white;
+                        border: 3px solid black;
+                        border-radius: 0;
+                        cursor: ${canClaim ? 'pointer' : 'not-allowed'};
+                        transition: all 0.1s;
+                        box-shadow: 3px 3px 0 rgba(0,0,0,1);
+                        width: 100%;
+                        ${canClaim ? '' : 'opacity: 0.6;'}
+                      "
+                      ${!canClaim ? 'disabled' : ''}
+                    >
+                      ODBIERZ
+                    </button>
+                  ` : '<span style="font-size: 32px;">✓</span>'}
+                </div>
+              `;
+            }).join('')}
+          </div>
+        </div>
+      `;
+      
+      levels.forEach(level => {
+        setTimeout(() => {
+          if (level.rewardIcon === 'coin') {
+            drawCoinIconForAvenue(`avenueReward${level.level}`, 24);
+          } else {
+            drawCreditIcon(`avenueReward${level.level}`, 24);
+          }
+        }, 50);
+      });
+      
+      if (document.getElementById('totalTicketsAvenue')) {
+        document.getElementById('totalTicketsAvenue').textContent = playerData.tickets;
+      }
+      if (document.getElementById('totalCreditsAvenue')) {
+        document.getElementById('totalCreditsAvenue').textContent = playerData.credits;
+      }
+    }
+    
+    function drawCoinIconForAvenue(canvasId, size) {
+      const canvas = document.getElementById(canvasId);
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, size, size);
+      
+      const scale = size / 24;
+      
+      ctx.fillStyle = "#FFD700";
+      ctx.beginPath();
+      ctx.arc(12 * scale, 12 * scale, 10 * scale, 0, Math.PI * 2);
+      ctx.fill();
+      
+      ctx.strokeStyle = "#B8860B";
+      ctx.lineWidth = 2 * scale;
+      ctx.stroke();
+      
+      ctx.strokeStyle = "#FFA500";
+      ctx.lineWidth = 1 * scale;
+      ctx.beginPath();
+      ctx.arc(12 * scale, 12 * scale, 7 * scale, 0, Math.PI * 2);
+      ctx.stroke();
+      
+      ctx.fillStyle = "#8B6914";
+      ctx.fillRect(11 * scale, 7 * scale, 2 * scale, 10 * scale);
+      ctx.fillRect(9 * scale, 8 * scale, 6 * scale, 2 * scale);
+      ctx.fillRect(9 * scale, 11 * scale, 6 * scale, 2 * scale);
+      ctx.fillRect(9 * scale, 14 * scale, 6 * scale, 2 * scale);
+    }
+    
+    async function claimAvenueReward(level) {
+      if (playerData.avenue_level !== level) return;
+      if (playerData.avenue_claimed) return;
+      
+      const levels = [];
+      for (let i = 1; i <= 15; i++) {
+        const ticketsRequired = i === 1 ? 0 : 100;
+        const totalTicketsNeeded = i === 1 ? 0 : (i - 1) * 100;
+        
+        let rewardType, rewardAmount;
+        if (i === 1) {
+          rewardType = 'coins';
+          rewardAmount = 500;
+        } else if (i === 2) {
+          rewardType = 'credits';
+          rewardAmount = 3;
+        } else if (i % 2 === 1) {
+          rewardType = 'coins';
+          rewardAmount = 250;
+        } else {
+          rewardType = 'credits';
+          rewardAmount = 3;
+        }
+        
+        levels.push({
+          level: i,
+          totalTicketsNeeded: totalTicketsNeeded,
+          rewardType: rewardType,
+          rewardAmount: rewardAmount
+        });
+      }
+      
+      const currentLevel = levels.find(l => l.level === level);
+      if (!currentLevel) return;
+      
+      if (playerData.tickets < currentLevel.totalTicketsNeeded) return;
+      
+      if (currentLevel.rewardType === 'credits') {
+        playerData.credits += currentLevel.rewardAmount;
+      }
+      
+      playerData.avenue_level++;
+      playerData.avenue_claimed = false;
+      
+      if (window.dataSdk && isInitialized) {
+        await window.dataSdk.create({
+          id: Date.now().toString(),
+          score: 0,
+          coins: 0,
+          distance: 0,
+          cars_jumped: 0,
+          taxis_jumped: 0,
+          tickets: playerData.tickets,
+          credits: playerData.credits,
+          avenue_level: playerData.avenue_level,
+          avenue_claimed: playerData.avenue_claimed,
+          avenue_first_visit: playerData.avenue_first_visit,
+          mission1_stage: playerData.mission1_stage,
+          mission2_stage: playerData.mission2_stage,
+          mission3_stage: playerData.mission3_stage,
+          mission4_stage: playerData.mission4_stage,
+          mission5_stage: playerData.mission5_stage,
+          mission1_claimed: playerData.mission1_claimed,
+          mission2_claimed: playerData.mission2_claimed,
+          mission3_claimed: playerData.mission3_claimed,
+          mission4_claimed: playerData.mission4_claimed,
+          mission5_claimed: playerData.mission5_claimed,
+          owned_characters: playerData.owned_characters,
+          active_character: playerData.active_character,
+          active_variant: playerData.active_variant,
+          timestamp: new Date().toISOString()
+        });
+      }
+      
+      updateAvenueDisplay();
+    }
+    
+    window.claimMissionReward = claimMissionReward;
+    window.claimAvenueReward = claimAvenueReward;
+    window.switchCity = function(cityId) {
+      // Na razie tylko jedno miasto
+    };
+    
+    window.addEventListener('resize', () => {
+      if (gameRunning) {
+        resizeCanvas();
+      }
+    });
+
+    async function onConfigChange(config) {
+      const menuElement = document.getElementById('menu');
+      const startButton = document.getElementById('startButton');
+      const gameUI = document.getElementById('gameUI');
+      const gameOverElement = document.getElementById('gameOver');
+      const restartButton = document.getElementById('restartButton');
+      const statBoxes = document.querySelectorAll('.stat-box');
+      const uiItems = document.querySelectorAll('.ui-item');
+      const gameTitle = document.getElementById('gameTitle');
+      const startButtonText = document.getElementById('startButton');
+      
+      const bgColor = config.background_color || defaultConfig.background_color;
+      const textColor = config.text_color || defaultConfig.text_color;
+      const buttonColor = config.button_color || defaultConfig.button_color;
+      const customFont = config.font_family || defaultConfig.font_family;
+      const baseSize = config.font_size || defaultConfig.font_size;
+      
+      menuElement.style.backgroundColor = bgColor;
+      
+      gameTitle.style.color = textColor;
+      gameTitle.style.fontFamily = `${customFont}, Arial, sans-serif`;
+      gameTitle.style.fontSize = `${baseSize * 4}px`;
+      
+      gameTitle.textContent = config.game_title || defaultConfig.game_title;
+      startButtonText.textContent = config.start_button_text || defaultConfig.start_button_text;
+      
+      statBoxes.forEach(box => {
+        box.style.fontFamily = `${customFont}, Arial, sans-serif`;
+      });
+      
+      startButton.style.fontFamily = `${customFont}, Arial, sans-serif`;
+      startButton.style.fontSize = `${baseSize * 1.75}px`;
+      
+      uiItems.forEach(item => {
+        item.style.fontFamily = `${customFont}, Arial, sans-serif`;
+        item.style.fontSize = `${baseSize * 1.5}px`;
+      });
+      
+      gameOverElement.style.fontFamily = `${customFont}, Arial, sans-serif`;
+      
+      restartButton.style.fontFamily = `${customFont}, Arial, sans-serif`;
+      restartButton.style.fontSize = `${baseSize * 1.5}px`;
+    }
+    
+    function adjustBrightness(color, percent) {
+      const num = parseInt(color.replace("#",""), 16);
+      const amt = Math.round(2.55 * percent);
+      const R = (num >> 16) + amt;
+      const G = (num >> 8 & 0x00FF) + amt;
+      const B = (num & 0x0000FF) + amt;
+      return "#" + (0x1000000 + (R<255?R<1?0:R:255)*0x10000 +
+        (G<255?G<1?0:G:255)*0x100 + (B<255?B<1?0:B:255))
+        .toString(16).slice(1);
+    }
+
+    if (window.elementSdk) {
+      window.elementSdk.init({
+        defaultConfig,
+        onConfigChange,
+        mapToCapabilities: (config) => ({
+          recolorables: [
+            {
+              get: () => config.background_color || defaultConfig.background_color,
+              set: (value) => {
+                config.background_color = value;
+                window.elementSdk.setConfig({ background_color: value });
+              }
+            },
+            {
+              get: () => config.ground_color || defaultConfig.ground_color,
+              set: (value) => {
+                config.ground_color = value;
+                window.elementSdk.setConfig({ ground_color: value });
+              }
+            },
+            {
+              get: () => config.text_color || defaultConfig.text_color,
+              set: (value) => {
+                config.text_color = value;
+                window.elementSdk.setConfig({ text_color: value });
+              }
+            },
+            {
+              get: () => config.button_color || defaultConfig.button_color,
+              set: (value) => {
+                config.button_color = value;
+                window.elementSdk.setConfig({ button_color: value });
+              }
+            },
+            {
+              get: () => config.obstacle_color || defaultConfig.obstacle_color,
+              set: (value) => {
+                config.obstacle_color = value;
+                window.elementSdk.setConfig({ obstacle_color: value });
+              }
+            }
+          ],
+          borderables: [],
+          fontEditable: {
+            get: () => config.font_family || defaultConfig.font_family,
+            set: (value) => {
+              config.font_family = value;
+              window.elementSdk.setConfig({ font_family: value });
+            }
+          },
+          fontSizeable: {
+            get: () => config.font_size || defaultConfig.font_size,
+            set: (value) => {
+              config.font_size = value;
+              window.elementSdk.setConfig({ font_size: value });
+            }
+          }
+        }),
+        mapToEditPanelValues: (config) => new Map([
+          ["game_title", config.game_title || defaultConfig.game_title],
+          ["start_button_text", config.start_button_text || defaultConfig.start_button_text]
+        ])
+      });
+    }
+
+    loadCharacterImages();
+    initializeDataSdk();
+    resizeCanvas();
+    onConfigChange(defaultConfig);
+    
+    setTimeout(() => {
+      drawCoinIcon();
+      drawDistanceIcon();
+      drawMenuCoinIcon();
+      drawMenuDistanceIcon();
+      drawTicketIcon('ticketIconHeader', 32);
+      drawTicketIcon('ticketIconAvenueHeader', 32);
+      drawCreditIcon('creditIconAvenueHeader', 32);
+    }, 100);
+  </script>
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9b79f9a464c61788',t:'MTc2NzM1Mzk1OS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
